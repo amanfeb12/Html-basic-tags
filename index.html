@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculator Web Application - SkillCraft</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: #191a23;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .calculator {
+      background: #27293d;
+      border-radius: 20px;
+      box-shadow: 0 8px 40px #16162d66;
+      padding: 32px 22px;
+      width: 320px;
+      max-width: 90vw;
+    }
+    .display {
+      width: 100%;
+      font-size: 2.2em;
+      background: #181a20;
+      color: #f2d16b;
+      border: none;
+      border-radius: 12px;
+      padding: 18px 14px;
+      margin-bottom: 18px;
+      text-align: right;
+      outline: none;
+      letter-spacing: 1px;
+      box-sizing: border-box;
+      overflow-x: auto;
+    }
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 13px;
+    }
+    button {
+      font-size: 1.18em;
+      padding: 19px 0;
+      border: none;
+      border-radius: 10px;
+      background: #23235b;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+      box-shadow: 0 2px 12px #16214122;
+    }
+    button.operator {
+      background: #f2d16b;
+      color: #181a20;
+      font-weight: bold;
+    }
+    button.equal {
+      background: #5c67f2;
+      color: #fff;
+      grid-column: span 2;
+      font-size: 1.22em;
+    }
+    button.clear {
+      background: #ee4e4e;
+      color: #fff;
+      font-weight: bold;
+    }
+    button:active {
+      background: #404283;
+    }
+    @media (max-width: 400px) {
+      .calculator {
+        padding: 15px 2vw;
+      }
+      .display {
+        font-size: 1.2em;
+        padding: 11px 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator">
+    <input type="text" class="display" id="display" disabled />
+    <div class="keys">
+      <button data-key="7">7</button>
+      <button data-key="8">8</button>
+      <button data-key="9">9</button>
+      <button class="operator" data-key="/">÷</button>
+      <button data-key="4">4</button>
+      <button data-key="5">5</button>
+      <button data-key="6">6</button>
+      <button class="operator" data-key="*">×</button>
+      <button data-key="1">1</button>
+      <button data-key="2">2</button>
+      <button data-key="3">3</button>
+      <button class="operator" data-key="-">−</button>
+      <button data-key="0">0</button>
+      <button data-key=".">.</button>
+      <button class="clear" data-key="C">C</button>
+      <button class="operator" data-key="+">+</button>
+      <button class="equal" data-key="=" style="grid-column: span 4;">=</button>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+    const keys = document.querySelector('.keys');
+    let currentInput = '';
+    let lastResult = '';
+
+    function updateDisplay(value) {
+      display.value = value || '0';
+    }
+
+    function isOperator(char) {
+      return ['+', '-', '*', '/'].includes(char);
+    }
+
+    function handleButton(key) {
+      if (key >= '0' && key <= '9' || key === '.') {
+        // avoid multiple decimals in one number
+        if (key === '.' && currentInput.split(/[\+\-\*\/]/).pop().includes('.')) return;
+        currentInput += key;
+      } else if (isOperator(key)) {
+        // do not allow two operators in a row
+        if (!currentInput || isOperator(currentInput.slice(-1))) return;
+        currentInput += key;
+      } else if (key === 'C') {
+        currentInput = '';
+        lastResult = '';
+        updateDisplay('');
+        return;
+      } else if (key === '=') {
+        calculateResult();
+        return;
+      }
+      updateDisplay(currentInput);
+    }
+
+    function calculateResult() {
+      try {
+        // avoid eval security risk: only allow numbers/operators
+        if (/[^0-9+\-*/.]/.test(currentInput)) {
+          throw new Error('Invalid input');
+        }
+        // can't end with operator
+        if (isOperator(currentInput.slice(-1))) {
+          currentInput = currentInput.slice(0, -1);
+        }
+        let result = Function('"use strict";return (' + currentInput + ')')();
+        if (result === Infinity || isNaN(result)) throw new Error('Math Error');
+        lastResult = result;
+        updateDisplay(result);
+        currentInput = result.toString();
+      } catch (err) {
+        updateDisplay('Error');
+        currentInput = '';
+      }
+    }
+
+    // Button click handling
+    keys.addEventListener('click', (e) => {
+      if (e.target.tagName === "BUTTON") {
+        let key = e.target.getAttribute('data-key');
+        handleButton(key);
+      }
+    });
+
+    // Handle keyboard input
+    document.addEventListener('keydown', (e) => {
+      let key = e.key;
+      if ((key >= '0' && key <= '9') || ['+', '-', '*', '/', '.', 'Enter', 'Backspace', 'c', 'C'].includes(key)) {
+        e.preventDefault();
+        if (key === 'Enter') key = '=';
+        if (key === 'Backspace') {
+          currentInput = currentInput.slice(0, -1);
+          updateDisplay(currentInput);
+          return;
+        }
+        if (key === 'c' || key === 'C') key = 'C';
+        handleButton(key);
+      }
+    });
+
+    // Initialize with 0
+    updateDisplay('');
+  </script>
+</body>
+</html>
